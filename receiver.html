@@ -23,67 +23,69 @@
   const db = firebase.firestore(app);
 </script>
 
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>جوال 2 — عرض والموافقة</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>الجوال 2 — إدخال الرمز وعرض البيانات</title>
+  <!-- Firebase compat SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <style>
-    body{font-family:Arial,system-ui;background:#0b1020;color:#e9edff;margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center}
-    .card{background:#121832;border:1px solid #263164;border-radius:16px;padding:22px;width:min(92%,560px);box-shadow:0 10px 40px rgba(0,0,0,.35)}
+    body{font-family:Arial,system-ui;background:#0b1020;color:#e9edff;margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh}
+    .card{background:#121832;border:1px solid #263164;border-radius:16px;padding:22px;width:min(92%,520px);box-shadow:0 10px 40px rgba(0,0,0,.35)}
     input{width:100%;padding:12px;margin:6px 0 12px;border-radius:10px;border:1px solid #263164;background:#0e1636;color:#e9edff;outline:none}
-    button{padding:12px 14px;border:0;border-radius:10px;background:#3a69ff;color:#fff;font-weight:800;cursor:pointer}
-    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-    .mono{font-family:ui-monospace,Consolas,monospace}
-    .box{padding:10px;border:1px dashed #263164;border-radius:10px;margin-top:8px;word-break:break-all}
-    .ok{background:#1f9d55} .bad{background:#e83d3d}
+    button{width:100%;padding:12px;border:0;border-radius:10px;background:#3a69ff;color:#fff;font-weight:800;cursor:pointer}
+    .box{margin-top:12px;padding:12px;border:1px dashed #263164;border-radius:12px;word-break:break-all}
+    .mono{font-family:ui-monospace,Consolas,monaco,monospace}
   </style>
 </head>
 <body>
   <div class="card">
-    <h2>جوال 2 — الاستلام</h2>
-    <div class="row">
-      <input id="sid" placeholder="حطّ id أو افتح بالرابط" />
-      <button id="load">فتح</button>
-    </div>
-    <div id="view" class="box" style="display:none">
-      <div>الإيميل: <span id="email" class="mono"></span></div>
-      <div>كلمة المرور: <span id="password" class="mono"></span></div>
-      <div class="row" style="margin-top:10px">
-        <button id="approve" class="ok">موافقة</button>
-        <button id="reject" class="bad">رفض</button>
-      </div>
-    </div>
+    <h2>📱 الجوال 2 — إدخال الرمز</h2>
+    <input id="code" placeholder="اكتب الرمز من الجوال 1">
+    <button id="check">تحقق</button>
+    <div id="out" class="box" style="display:none"></div>
   </div>
 
-  <script type="module">
-    const firebaseConfig = {"apiKey": "AIzaSyDInDvI0xrWCmvfKN6QQQpB5YiESeJS_Jc", "authDomain": "iugfgg.firebaseapp.com", "projectId": "iugfgg", "storageBucket": "iugfgg.firebasestorage.app", "messagingSenderId": "595497115275", "appId": "1:595497115275:web:7f019d07b5ea61e2677e8e", "measurementId": "G-JR5KEPMHPR"};
+  <script>
+    // نفس تكوين مشروعك
+    const firebaseConfig = {
+      apiKey: "AIzaSyDInDvI0xrWCmvfKN6QQQpB5YiESeJS_Jc",
+      authDomain: "iugfgg.firebaseapp.com",
+      projectId: "iugfgg",
+      storageBucket: "iugfgg.firebasestorage.app",
+      messagingSenderId: "595497115275",
+      appId: "1:595497115275:web:7f019d07b5ea61e2677e8e",
+      measurementId: "G-JR5KEPMHPR"
+    };
 
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore(app);
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+    document.getElementById('check').addEventListener('click', async () => {
+      const code = (document.getElementById('code').value || '').trim();
+      if(!code){ alert('اكتب الرمز'); return; }
 
-    const $ = s => document.querySelector(s);
+      const ref = db.collection('sessions').doc(code);
+      const snap = await ref.get();
+      const out = document.getElementById('out');
 
-    function getIdFromUrl(){ try{ return new URL(location.href).searchParams.get('id'); }catch{ return ''; } }
-
-    async function load(){
-      const id = (document.getElementById("sid").value || getIdFromUrl() || '').trim();
-      if(!id){ alert("أدخل id أو افتح الرابط الذي وصلك"); return; }
-      const ref = doc(db, 'sessions', id);
-      const snap = await getDoc(ref);
-      if(!snap.exists()){ alert('ما لقيت الجلسة'); return; }
+      if(!snap.exists){
+        out.style.display='block';
+        out.textContent = '❌ الرمز غير صحيح أو منتهي.';
+        return;
+      }
       const data = snap.data();
-      document.getElementById("email").textContent = data.email || '';
-      document.getElementById("password").textContent = data.password || '';
-      document.getElementById("view").style.display = 'block';
 
-      document.getElementById("approve").onclick = ()=> updateDoc(ref, { status: 'approved' });
-      document.getElementById("reject").onclick  = ()=> updateDoc(ref, { status: 'rejected'  });
-    }
+      // عرض الإيميل وكلمة المرور التي كتبها جوال 1
+      out.style.display='block';
+      out.innerHTML =
+        '📧 الإيميل: <span class="mono">'+(data.email||'')+'</span><br>'+
+        '🔒 كلمة المرور: <span class="mono">'+(data.password||'')+'</span>';
 
-    document.getElementById("load").addEventListener('click', load);
-    window.addEventListener('load', ()=>{ const q = getIdFromUrl(); if(q){ document.getElementById("sid").value=q; load(); } });
+      // (اختياري): حذف المستند بعد القراءة لمرة واحدة
+      // await ref.delete();
+    });
   </script>
 </body>
 </html>
+

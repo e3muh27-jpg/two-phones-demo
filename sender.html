@@ -1,6 +1,28 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
+  <!-- Firebase App (المكتبة الأساسية) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"></script>
+
+<!-- Firestore -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"></script>
+
+<script>
+  // 🔑 إعدادات مشروعك من Firebase
+  const firebaseConfig = {
+    apiKey: "API_KEY_حط_هنا",
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    projectId: "YOUR_PROJECT",
+    storageBucket: "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "SENDER_ID",
+    appId: "APP_ID"
+  };
+
+  // تشغيل Firebase
+  const app = firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore(app);
+</script>
+
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>جوال 1 — إرسال والانتظار</title>
